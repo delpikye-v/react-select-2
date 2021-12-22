@@ -9,6 +9,11 @@
         background: #fff;
         border-radius: 10px;
 
+        .select2-selection__rendered {
+            position: relative;
+            height: 100%;
+        }
+
         .select2-selection--multiple {
             position: relative;
             height: 100%;
@@ -20,13 +25,13 @@
         .select2-selection--single {
             border: none;
             padding-left: 5px;
-            padding-right: 5px
-        }
-    }
+            padding-right: 5px;
 
-    .select2-selection__rendered {
-        position: relative;
-        height: 100%;
+            .select2-selection__rendered {
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
     }
 
     .select2-container.select2-container--default {
@@ -61,7 +66,7 @@
         color: #808080;
         padding-left: 0px;
         padding-right: 20px;
-        max-width: 200px;
+        max-width: 240px; // override it if you want change limit
 
         .select2-selection__choice__display {
             display: block;
@@ -103,7 +108,7 @@
         border: 1px solid #e9eaec !important;
         overflow: hidden;
         border-radius: 10px;
-        margin-top: 5px;
+        margin-top: 3px;
         -moz-border-radius: 10px;
         -webkit-border-radius : 10px;
         box-shadow:0 2px 20px 0 rgba(0,0,0,0.05);

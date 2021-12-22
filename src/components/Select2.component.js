@@ -1,22 +1,17 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import PropTypes from 'prop-types'
 import $ from 'jquery'
 import PerfectScrollbar from 'perfect-scrollbar'
 
-// import 'select2/dist/js/select2.min.js'
-// import 'select2/dist/css/select2.min.css'
-// import 'perfect-scrollbar/css/perfect-scrollbar.css'
+/*
+main.js
+import 'select2/dist/js/select2.min.js'
+import 'select2/dist/css/select2.min.css'
+import 'perfect-scrollbar/css/perfect-scrollbar.css'
+*/
 
 import './Select2.style.scss'
 
-$.fn.select2.amd.require(['select2/selection/search'], function(Search) {
-    let oldRemoveChoice = Search.prototype.searchRemoveChoice
-    Search.prototype.searchRemoveChoice = function() {
-        oldRemoveChoice.apply(this, arguments)
-        this.$search.val('')
-        this.handleSearch()
-    }
-})
 const isFunc = (func) => typeof func === 'function'
 const uuid = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -28,15 +23,17 @@ const uuid = () => {
 
 const DkzSelect2 = (props) => {
     const {
+        id,
         options = [],
         selectedValues = [],
         onChange,
         className,
+        required,
         disabled = false,
         multiple = false,
         optionClassName,
-        maximumSelectionLength = 0,
         selectedClassName,
+        maximumSelectionLength = 0,
         keyLabel,
         keyValue,
         closeOnSelect = false,
@@ -52,6 +49,21 @@ const DkzSelect2 = (props) => {
     } = props
     const ref = useRef()
     const [localSelected, setLocalSelected] = useState(() => selectedValues || [])
+
+    useEffect(() => {
+        let local = true
+        $.fn.select2.amd.require(['select2/selection/search'], function(Search) {
+            let oldRemoveChoice = Search.prototype.searchRemoveChoice
+            oldRemoveChoice = Search.prototype.searchRemoveChoice
+            Search.prototype.searchRemoveChoice = function() {
+                oldRemoveChoice.apply(this, arguments)
+                if (local) {
+                    this.$search.val('')
+                    this.handleSearch()
+                }
+            }
+        })
+    }, [])
 
     useEffect(() => {
         buildSelect2(options.map((item, index) => buildObjectItem(item, index)))
@@ -76,20 +88,20 @@ const DkzSelect2 = (props) => {
         let displayLabel = typeof labelText === 'object' ? JSON.stringify(labelText) : labelText
 
         // customize option
-        if (!defaultOption) {
-            option = `<span class="${optionClassName || ''}">${displayLabel}</span>`
-        } else {
+        if (isFunc(defaultOption)) {
             option = defaultOption(item, index)
+        } else {
+            option = `<span class="${optionClassName || ''}">${displayLabel}</span>`
         }
 
         // customize selection
-        if (!defaultDisplay) {
-            text= `<span class="${selectedClassName || ''}">${displayLabel}</span>`
-        } else {
+        if (isFunc(defaultDisplay)) {
             text = defaultDisplay(item, index)
+        } else {
+            text= `<span class="${selectedClassName || ''}">${displayLabel}</span>`
         }
 
-        if (defaultSelected) {
+        if (isFunc(defaultSelected)) {
             selected = defaultSelected(item, index, localSelected)
         } else {
             if (localSelected.length > 0) {
@@ -175,19 +187,20 @@ const DkzSelect2 = (props) => {
         // ===============================================================
         // Event config
         // ===============================================================
-        let { $container, selection } = el.data('select2')
+        let { $container } = el.data('select2')
         let tmpPos = 0
 
         let selectScrollbar = null
         let optionScrollbar = null
 
-        const containSelectin = $container.find('> .selection')
+        const containerSelection = $container.find('> .selection')
+        let targetSearch = multiple ? 'selection' : 'dropdown'
+        let searchInput = el.data('select2')[targetSearch].$search
 
         function onTempChange(isSelected) {
             let selectionData = el.data('select2').data()
 
             let tempSelected = []
-            // this is object
             if (hasKey()) {
                 tempSelected = selectionData.map(({ selfData }) => selfData[keyValue] )
             } else {
@@ -199,22 +212,21 @@ const DkzSelect2 = (props) => {
             }
             setLocalSelected(tempSelected)
 
-            selectScrollbar = makeSelectionScrollbar([containSelectin, selectScrollbar, selection.$search, isSelected])
+            selectScrollbar = makeSelectionScrollbar([containerSelection, selectScrollbar, searchInput, isSelected])
         }
+
         el.on('select2:select', () => onTempChange(true))
         el.on('select2:unselect', () => onTempChange(false))
 
         el.on('select2:open', function() {
             let dropdown = el.data('select2').$dropdown
             optionScrollbar = makeOptionScrollbar(dropdown, tmpPos, optionScrollbar)
+            searchInput[0] && searchInput.focus()
 
             // scroll to view input
-            containSelectin[0].scrollTop = containSelectin[0].scrollHeight
-            setTimeout(() => {
-                let target = multiple ? 'selection' : 'dropdown'
-                let searchBox = el.data('select2')[target].$search
-                searchBox[0] && searchBox[0].focus()
-            }, 100);
+            if (multiple) {
+                containerSelection.animate({ scrollTop: containerSelection[0].scrollHeight }, 250)
+            }
         })
 
         el.on('select2:close', function() {
@@ -227,52 +239,61 @@ const DkzSelect2 = (props) => {
             tmpPos = dropdown.find('.select2-results')[0].scrollTop
         })
 
-        selectScrollbar = makeSelectionScrollbar([containSelectin, selectScrollbar, selection.$search, false, 0])
+        searchInput.on('keyup', (evt) => {
+            if (optionScrollbar) {
+                if (evt.key !== 'Backspace') {
+                    tmpPos = 0
+                    optionScrollbar.element.scrollTop = 0
+                }
+                optionScrollbar.update()
+            }
+        })
+
+        selectScrollbar = makeSelectionScrollbar([containerSelection, selectScrollbar, searchInput, false, 0])
     }
 
     const makeSelectionScrollbar = ([selectionBox, selectionScrollbar, elSearch, isNew, pos]) => {
-        if (!hasOptions()) {
+        if (!hasOptions() || !multiple) {
             return
         }
-
         if (pos === 0) {
             selectionBox[0].scrollTop = 0
         } else {
             if (isNew) {
-                selectionBox[0].scrollTop = selectionBox[0].scrollHeight
+                selectionBox.animate({ scrollTop: selectionBox[0].scrollHeight }, 250)
             }
             elSearch && elSearch.focus()
         }
 
         if (selectionScrollbar) {
-            selectionScrollbar.destroy()
-            selectionScrollbar = undefined
+            selectionScrollbar.update()
+            return selectionScrollbar
         }
 
-        selectionScrollbar = new PerfectScrollbar(selectionBox[0], {
+        return new PerfectScrollbar(selectionBox[0], {
             suppressScrollX: true
         })
-        return selectionScrollbar
     }
 
     const makeOptionScrollbar = ($dropdown, scrollTop = 0, optionScrollbar) => {
-        if (!hasOptions()) {
-            return
-        }
-
         if (optionScrollbar) {
             optionScrollbar.update()
             return
         }
 
         let listBox = $dropdown.find('.select2-results')
-        listBox && (listBox[0].scrollTop = scrollTop)
-        $dropdown.addClass('rdk-select2-list-item')
-        listBox = $dropdown.find('.select2-results')
-        optionScrollbar = new PerfectScrollbar(listBox[0], {
-            minScrollbarLength: 20
-        })
-        setTimeout(() => optionScrollbar.update(), 100)
+        if (listBox) {
+            listBox[0].scrollTop = scrollTop
+            $dropdown.addClass('rdk-select2-list-item')
+
+            if (!hasOptions()) {
+                return
+            }
+            optionScrollbar = new PerfectScrollbar(listBox[0], {
+                minScrollbarLength: 20
+            })
+            setTimeout(() => optionScrollbar.update(), 100)
+        }
         return optionScrollbar
     }
 
@@ -286,7 +307,9 @@ const DkzSelect2 = (props) => {
     return (
         <span className={select2ClassName()}>
             <select
+                id={id}
                 ref={ref}
+                required={required}
                 disabled={disabled}
                 multiple={multiple}
             >
@@ -302,6 +325,7 @@ DkzSelect2.prototype = {
     selectedValues: PropTypes.array,
     onChange: PropTypes.func,
     className: PropTypes.string,
+    required: PropTypes.bool,
     disabled: PropTypes.bool,
     multiple: PropTypes.bool,
     optionClassName: PropTypes.string,

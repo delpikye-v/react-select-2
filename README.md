@@ -7,7 +7,7 @@
 
 #### Description
 
-+ React select2. (Cutomize template option)
++ React select2. Basic with multi choice. (Cutomize template option)
 
 + Apply `perfect-scrollbar`
 
@@ -39,12 +39,12 @@ import 'react-select-2z/build/styles.css'
         multiple={true}
         selectedValues={selected}
         options={state}
-        // templateOption={templateOption} // customize template
-        // templateDisplay={templateDisplay} // customize template
-        // customSelected={customSelected}
-        // customSearch={customSearch}
+        // templateOption={templateOption} // customize template (option) (html)
+        // templateDisplay={templateDisplay} // customize selected values (html)
+        // customSelected={customSelected} // customize check selected
+        // customSearch={customSearch} // customize check search
         keyLabel='title'
-        keyValue='id'
+        keyValue='id' // when options = [1, 2, 3, 4...]  (no need keyValue & keyLabel)
         placeholder='Select item'
         // disabled
       />
@@ -55,16 +55,39 @@ import 'react-select-2z/build/styles.css'
 ---
 
 #### props
-###### TreeItem
-| **props**               | **type** | **description**                                                                  |
-|-------------------------|----------|------------------------------------------------------------                      |
+Some main select2 advance checking...
 
+| **props**               | **type** | **description**                                            |
+|-------------------------|----------|------------------------------------------------------------|
+|id                       |          |                                                            |
+|options = []             |          |                                                            |
+|selectedValues = []      |          |                                                            |
+|onChange                 |          |                                                            |
+|className                |          |                                                            |
+|required = false         |          |                                                            |
+|disabled = false         |          |                                                            |
+|multiple = false         |          |                                                            |
+|optionClassName          |          |                                                            |
+|selectedClassName        |          |                                                            |
+|maximumSelectionLength   | Number   |  Need update > 0. Default nolimit                          |
+|keyLabel                 |          |  list object (key for selected)                            |
+|keyValue                 |          |  list object (label for selected)                          |
+|closeOnSelect = false    |          |                                                            |
+|placeholder              |          |                                                            |
+|noSearchResultFunc       |          | set text when search no data                               |
+|noDataFunc               |          | set text when no option                                    |
+|onHidden                 |          |                                                            |
+|select2Config = {}       |          |                                                            |
+|templateOption           |          |                                                            |
+|templateDisplay          |          |                                                            |
+|customSelected           |          |                                                            |
+|customSearch             |          |                                                            |
 
 #####
 
 <br />
 
-
+Something checking! (idea, v.v..)
 <br />
 
 #### RUN

@@ -1,7 +1,7 @@
 {
   "name": "react-select-2z",
-  "version": "0.1.0-beta",
-  "description": "React select2 (Hooks)",
+  "version": "0.2.0",
+  "description": "React select2 (Hooks). (Customize html for multi-select)",
   "main": "build/index.js",
   "module": "build/index.js",
   "browser": "build/index.js",
@@ -71,7 +71,6 @@
     "react": "^16.8.0",
     "react-dom": "^16.8.0",
     "react-test-renderer": "^16.13.1",
-    "react-tooltip-z": "^1.1.3",
     "rimraf": "^3.0.2",
     "rollup": "^2.13.1",
     "rollup-plugin-filesize": "^9.0.0",
