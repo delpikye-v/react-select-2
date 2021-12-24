@@ -41,8 +41,8 @@ import 'react-select-2z/build/styles.css'
         options={state}
         // templateOption={templateOption} // customize template (option) (html)
         // templateDisplay={templateDisplay} // customize selected values (html)
-        // customSelected={customSelected} // customize check selected
-        // customSearch={customSearch} // customize check search
+        // customCheckSelect={customCheckSelect} // customize check selected
+        // customFilterData={customFilterData} // customize check search
         keyLabel='title'
         keyValue='id' // when options = [1, 2, 3, 4...]  (no need keyValue & keyLabel)
         placeholder='Select item'
@@ -69,19 +69,19 @@ Some main select2 advance checking...
 |multiple = false         |          |                                                            |
 |optionClassName          |          |                                                            |
 |selectedClassName        |          |                                                            |
-|maximumSelectionLength   | Number   |  Need update > 0. Default nolimit                          |
+|maximumSelectionLength   | number   |  Need update > 0. Default nolimit                          |
 |keyLabel                 |          |  list object (key for selected)                            |
 |keyValue                 |          |  list object (label for selected)                          |
-|closeOnSelect = false    |          |                                                            |
+|closeOnSelect            | boolean  |  Default. (False)                                          |
 |placeholder              |          |                                                            |
-|noSearchResultFunc       |          | set text when search no data                               |
-|noDataFunc               |          | set text when no option                                    |
-|onHidden                 |          |                                                            |
+|noFoundData              | func     |  set text when search no data                              |
+|noOptionData             | func     |  set text when no option                                   |
+|onHidden                 | func     |                                                            |
 |select2Config = {}       |          |                                                            |
 |templateOption           |          |                                                            |
 |templateDisplay          |          |                                                            |
-|customSelected           |          |                                                            |
-|customSearch             |          |                                                            |
+|customCheckSelect        | func     |                                                            |
+|customFilterData         | func     |                                                            |
 
 #####
 

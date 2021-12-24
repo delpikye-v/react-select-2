@@ -4,6 +4,7 @@
     position: relative;
 
     .select2.select2-container {
+        // width: 200px !important; // override it
         position: relative;
         border: 1px solid #cacacc;
         background: #fff;
@@ -18,18 +19,23 @@
             position: relative;
             height: 100%;
             border: none;
+            border-radius: 10px;
             padding-left: 5px;
-            padding-right: 5px
+            padding-right: 10px
         }
 
         .select2-selection--single {
+            position: relative;
             border: none;
+            border-radius: 10px;
             padding-left: 5px;
             padding-right: 5px;
 
             .select2-selection__rendered {
                 overflow: hidden;
                 text-overflow: ellipsis;
+                line-height: normal !important;
+                white-space: pre !important;
             }
         }
     }
@@ -44,18 +50,18 @@
         }
     }
 
+    .select2-container--default.select2-container--focus {
+        .select2-selection--multiple, .select2-selection--single {
+            border-radius: 10px;
+            outline: 0;
+        }
+    }
+
     .select2-container.select2-container--default .select2-selection--single {
         height: auto !important;
         padding: 5px 0;
     }
 
-    .select2-container.select2-container--default .select2-selection--single .select2-selection__rendered {
-        line-height: normal !important;
-    }
-
-    .select2-container.select2-container--default .select2-selection--single .select2-selection__rendered {
-        white-space: normal !important;
-    }
 
     .select2-container.select2-container--default .select2-selection--multiple .select2-selection__choice {
         background-color: #d3d7dd;
@@ -66,7 +72,7 @@
         color: #808080;
         padding-left: 0px;
         padding-right: 20px;
-        max-width: 240px; // override it if you want change limit
+        // max-width: 240px; // override it if you want change limit
 
         .select2-selection__choice__display {
             display: block;
@@ -96,8 +102,7 @@
         font-size: 14px;
     }
 
-    /* / select2 inside */
-    .selection li.select2-search:first-child input.select2-search__field[type=search] {
+    .selection li.select2-search:first-child input.select2-search__field {
         width: 100% !important;
     }
 }
@@ -108,12 +113,19 @@
         border: 1px solid #e9eaec !important;
         overflow: hidden;
         border-radius: 10px;
-        margin-top: 3px;
         -moz-border-radius: 10px;
         -webkit-border-radius : 10px;
         box-shadow:0 2px 20px 0 rgba(0,0,0,0.05);
         -moz-box-shadow:0 2px 20px 0 rgba(0,0,0,0.05);
         -webkit-box-shadow:0 2px 20px 0 rgba(0,0,0,0.05);
+
+        &.select2-dropdown--below {
+            margin-top: 3px;
+        }
+
+        &.select2-dropdown--above {
+            margin-bottom: 3px;
+        }
     }
 
     .select2-results {

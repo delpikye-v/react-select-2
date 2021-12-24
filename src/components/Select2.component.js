@@ -3,8 +3,10 @@ import PropTypes from 'prop-types'
 import $ from 'jquery'
 import PerfectScrollbar from 'perfect-scrollbar'
 
+import { useWindowSize } from './Select2.useHook'
+
 /*
-main.js
+import it from main.js
 import 'select2/dist/js/select2.min.js'
 import 'select2/dist/css/select2.min.css'
 import 'perfect-scrollbar/css/perfect-scrollbar.css'
@@ -12,16 +14,20 @@ import 'perfect-scrollbar/css/perfect-scrollbar.css'
 
 import './Select2.style.scss'
 
-const isFunc = (func) => typeof func === 'function'
+const isFunc = func => typeof func === 'function'
 const uuid = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         // eslint-disable-next-line no-mixed-operators
         var r = Math.random()*16|0, v = c === 'x' ? r : (r&0x3|0x8);
-        return v.toString(16);
-    });
+        return v.toString(16)
+    })
 }
 
-const DkzSelect2 = (props) => {
+const arrowNext = 'ArrowDown'
+const arrowBack = 'ArrowUp'
+const arrowKey = [arrowNext, arrowBack]
+
+const DkzSelect2 = props => {
     const {
         id,
         options = [],
@@ -38,21 +44,27 @@ const DkzSelect2 = (props) => {
         keyValue,
         closeOnSelect = false,
         placeholder,
-        noSearchResultFunc,
-        noDataFunc,
+        noFoundData,
+        noOptionData,
         onHidden,
         select2Config = {},
         templateOption,
         templateDisplay,
-        customSelected,
-        customSearch
+        customCheckSelect,
+        customFilterData
     } = props
     const ref = useRef()
+    const refScrollSelection = useRef(null)
+    const refScrollOption = useRef(null)
+
     const [localSelected, setLocalSelected] = useState(() => selectedValues || [])
 
+    const resize = useWindowSize()
+    // const refScroll
     useEffect(() => {
         let local = true
-        $.fn.select2.amd.require(['select2/selection/search'], function(Search) {
+        // Checking build
+        $.fn.select2?.amd?.require(['select2/selection/search'], function(Search) {
             let oldRemoveChoice = Search.prototype.searchRemoveChoice
             oldRemoveChoice = Search.prototype.searchRemoveChoice
             Search.prototype.searchRemoveChoice = function() {
@@ -63,12 +75,22 @@ const DkzSelect2 = (props) => {
                 }
             }
         })
+
+        buildSelect2([]) // make beaty display
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
+        /** Need rebuil select2 when selectedValues */
         buildSelect2(options.map((item, index) => buildObjectItem(item, index)))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [options])
+
+    useEffect(() => {
+        /** Need update scrollbar when window resize  */
+        refScrollOption.current && refScrollOption.current.update()
+        refScrollSelection.current && refScrollSelection.current.update()
+    }, [resize])
 
     const select2ClassName = useCallback(() => `rdk-select2-component ${className || ''}`.trim(), [className])
     const hasOptions = useCallback(() => options.length > 0, [options])
@@ -79,12 +101,12 @@ const DkzSelect2 = (props) => {
         // using customize template
         let defaultOption = item.templateOption || templateOption
         let defaultDisplay = item.templateDisplay || templateDisplay
-        let defaultSelected = item.customSelected || customSelected
+        let defaultSelected = item.customCheckSelect || customCheckSelect
 
         let text, option, selected
 
         // when you pass array single option ['1', '2', '3'....]
-        let labelText = (hasKey() && item[keyLabel] !== undefined) ? item[keyLabel] : item
+        let labelText = hasKey() && item[keyLabel] !== undefined ? item[keyLabel] : item
         let displayLabel = typeof labelText === 'object' ? JSON.stringify(labelText) : labelText
 
         // customize option
@@ -98,7 +120,7 @@ const DkzSelect2 = (props) => {
         if (isFunc(defaultDisplay)) {
             text = defaultDisplay(item, index)
         } else {
-            text= `<span class="${selectedClassName || ''}">${displayLabel}</span>`
+            text = `<span class="${selectedClassName || ''}">${displayLabel}</span>`
         }
 
         if (isFunc(defaultSelected)) {
@@ -118,13 +140,13 @@ const DkzSelect2 = (props) => {
             selected,
             disabled: item.disabled,
             displayLabelSearch: `${displayLabel}`.toLowerCase(),
-            selfData: item,
+            selfData: item
         }
     }
 
     const matchCustom = ({ term }, item) => {
-        if (isFunc(customSearch)) {
-            return customSearch(item.selfData, term) ? item : null
+        if (isFunc(customFilterData)) {
+            return customFilterData(item.selfData, term) ? item : null
         }
         if (term === null || term === undefined) {
             return item
@@ -148,8 +170,10 @@ const DkzSelect2 = (props) => {
             if (el.data && el.data('select2')) {
                 el.select2('destroy')
             }
+            // eslint-disable-next-line no-empty
         } catch (e) {}
 
+        let targetSearch = multiple ? 'selection' : 'dropdown'
         // make select2
         let config = () => {
             return {
@@ -164,12 +188,12 @@ const DkzSelect2 = (props) => {
                 selectionTitleAttribute: false,
                 language: {
                     noResults: () => {
-                        let keySearch = el.data('select2').selection.$search.val()
+                        let keySearch = el.data('select2')[targetSearch].$search.val()
                         if (!hasOptions()) {
-                            return isFunc(noDataFunc) ? noDataFunc() : 'No options!'
+                            return isFunc(noOptionData) ? noOptionData() : 'No options!'
                         }
-                        if (isFunc(noSearchResultFunc)) {
-                            return noSearchResultFunc(`${keySearch}`.trim())
+                        if (isFunc(noFoundData)) {
+                            return noFoundData(`${keySearch}`.trim())
                         }
                         return `No found ${keySearch}!`
                     }
@@ -190,11 +214,7 @@ const DkzSelect2 = (props) => {
         let { $container } = el.data('select2')
         let tmpPos = 0
 
-        let selectScrollbar = null
-        let optionScrollbar = null
-
         const containerSelection = $container.find('> .selection')
-        let targetSearch = multiple ? 'selection' : 'dropdown'
         let searchInput = el.data('select2')[targetSearch].$search
 
         function onTempChange(isSelected) {
@@ -202,17 +222,14 @@ const DkzSelect2 = (props) => {
 
             let tempSelected = []
             if (hasKey()) {
-                tempSelected = selectionData.map(({ selfData }) => selfData[keyValue] )
+                tempSelected = selectionData.map(({ selfData }) => selfData[keyValue])
             } else {
-                tempSelected = selectionData.map(({ selfData }) => selfData )
+                tempSelected = selectionData.map(({ selfData }) => selfData)
             }
 
-            if (isFunc(onChange)) {
-                onChange(tempSelected) // notify parent
-            }
+            isFunc(onChange) && onChange(tempSelected) // notify parent
             setLocalSelected(tempSelected)
-
-            selectScrollbar = makeSelectionScrollbar([containerSelection, selectScrollbar, searchInput, isSelected])
+            makeSelectionScrollbar([containerSelection, searchInput, isSelected])
         }
 
         el.on('select2:select', () => onTempChange(true))
@@ -220,8 +237,8 @@ const DkzSelect2 = (props) => {
 
         el.on('select2:open', function() {
             let dropdown = el.data('select2').$dropdown
-            optionScrollbar = makeOptionScrollbar(dropdown, tmpPos, optionScrollbar)
-            searchInput[0] && searchInput.focus()
+            makeOptionScrollbar(dropdown, tmpPos)
+            searchInput[0] && searchInput[0].focus()
 
             // scroll to view input
             if (multiple) {
@@ -231,76 +248,82 @@ const DkzSelect2 = (props) => {
 
         el.on('select2:close', function() {
             isFunc(onHidden) && onHidden()
-            optionScrollbar = removeOptionScrollbar(optionScrollbar)
         })
 
-        el.on('select2:closing', function(evt) {
+        el.on('select2:closing', function() {
             let dropdown = el.data('select2').$dropdown
             tmpPos = dropdown.find('.select2-results')[0].scrollTop
         })
 
-        searchInput.on('keyup', (evt) => {
-            if (optionScrollbar) {
-                if (evt.key !== 'Backspace') {
-                    tmpPos = 0
-                    optionScrollbar.element.scrollTop = 0
+        searchInput[0].addEventListener('keyup', function(evt) {
+            if (refScrollOption.current) {
+                if (arrowKey.includes(evt.key)) {
+                    let hl = el.data('select2').$dropdown.find('.select2-results__option--highlighted')
+                    let hlOffset = hl.offset()
+
+                    let { element } = refScrollOption.current
+                    let scrollTop = element.scrollTop
+                    let diff = hlOffset.top - $(element).offset().top
+
+                    if (arrowBack === evt.key) {
+                        if (diff < hl.height()) {
+                            $(element).animate({ scrollTop: scrollTop + diff }, 250)
+                        }
+                    } else {
+                        let maxOver = element.clientHeight - hl.height()
+                        if (diff > maxOver) {
+                            $(element).animate({ scrollTop: scrollTop + diff - maxOver + hl.height() }, 250)
+                        }
+                    }
                 }
-                optionScrollbar.update()
+                refScrollOption.current.update()
             }
         })
 
-        selectScrollbar = makeSelectionScrollbar([containerSelection, selectScrollbar, searchInput, false, 0])
+        makeSelectionScrollbar([containerSelection, searchInput, false, 0])
     }
 
-    const makeSelectionScrollbar = ([selectionBox, selectionScrollbar, elSearch, isNew, pos]) => {
+    const makeSelectionScrollbar = ([selectionBox, elSearch, isNew, pos]) => {
         if (!hasOptions() || !multiple) {
             return
         }
         if (pos === 0) {
             selectionBox[0].scrollTop = 0
         } else {
-            if (isNew) {
-                selectionBox.animate({ scrollTop: selectionBox[0].scrollHeight }, 250)
-            }
+            isNew && selectionBox.animate({ scrollTop: selectionBox[0].scrollHeight }, 250)
             elSearch && elSearch.focus()
         }
 
-        if (selectionScrollbar) {
-            selectionScrollbar.update()
-            return selectionScrollbar
-        }
-
-        return new PerfectScrollbar(selectionBox[0], {
-            suppressScrollX: true
-        })
-    }
-
-    const makeOptionScrollbar = ($dropdown, scrollTop = 0, optionScrollbar) => {
-        if (optionScrollbar) {
-            optionScrollbar.update()
+        if (refScrollSelection.current) {
+            refScrollSelection.current.update()
             return
         }
 
+        refScrollSelection.current = new PerfectScrollbar(selectionBox[0], {
+            suppressScrollX: true
+        })
+        setTimeout(() => refScrollSelection.current.update(), 100)
+    }
+
+    const makeOptionScrollbar = ($dropdown, scrollTop = 0) => {
         let listBox = $dropdown.find('.select2-results')
         if (listBox) {
             listBox[0].scrollTop = scrollTop
             $dropdown.addClass('rdk-select2-list-item')
 
+            if (refScrollOption.current) {
+                refScrollOption.current.update()
+                return
+            }
+
             if (!hasOptions()) {
                 return
             }
-            optionScrollbar = new PerfectScrollbar(listBox[0], {
+
+            refScrollOption.current = new PerfectScrollbar(listBox[0], {
                 minScrollbarLength: 20
             })
-            setTimeout(() => optionScrollbar.update(), 100)
-        }
-        return optionScrollbar
-    }
-
-    const removeOptionScrollbar = (optionScrollbar) => {
-        if (optionScrollbar) {
-            optionScrollbar.destroy()
-            return undefined
+            setTimeout(() => refScrollOption.current.update(), 100)
         }
     }
 
@@ -308,12 +331,12 @@ const DkzSelect2 = (props) => {
         <span className={select2ClassName()}>
             <select
                 id={id}
+                style={{ opacity: 0 }}
                 ref={ref}
                 required={required}
                 disabled={disabled}
                 multiple={multiple}
-            >
-            </select>
+            ></select>
         </span>
     )
 }
@@ -335,12 +358,12 @@ DkzSelect2.prototype = {
     keyValue: PropTypes.string,
     closeOnSelect: PropTypes.bool,
     placeholder: PropTypes.string,
-    noSearchResultFunc: PropTypes.func,
-    noDataFunc: PropTypes.func,
+    noFoundData: PropTypes.func,
+    noOptionData: PropTypes.func,
     onHidden: PropTypes.func,
     select2Config: PropTypes.object,
     templateOption: PropTypes.func, // html customize (not jsx)
     templateDisplay: PropTypes.func,
-    customSelected: PropTypes.func,
-    customSearch: PropTypes.func
+    customCheckSelect: PropTypes.func,
+    customFilterData: PropTypes.func
 }

@@ -1,6 +1,6 @@
 {
   "name": "react-select-2z",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "React select2 (Hooks). (Customize html for multi-select)",
   "main": "build/index.js",
   "module": "build/index.js",
@@ -32,7 +32,8 @@
     "react-components",
     "react-select2",
     "react-select",
-    "select2"
+    "select2",
+    "select"
   ],
   "license": "MIT",
   "bugs": {
