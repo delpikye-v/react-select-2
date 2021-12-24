@@ -1,6 +1,6 @@
 {
   "name": "react-select-2z",
-  "version": "0.2.1",
+  "version": "0.2.5-samd",
   "description": "React select2 (Hooks). (Customize html for multi-select)",
   "main": "build/index.js",
   "module": "build/index.js",
